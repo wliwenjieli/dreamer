@@ -261,9 +261,6 @@ def reconstituteGrid(bitRep):
     width, height = bitRep[:2]
     return Grid(width, height, bitRepresentation= bitRep[2:])
 
-####################################
-# Parts you shouldn't have to read #
-####################################
 
 class Actions:
     """

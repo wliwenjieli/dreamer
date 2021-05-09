@@ -434,8 +434,8 @@ class GhostRules:
             state.data._eaten[agentIndex] = True
         else:
             if not state.data._win:
-                state.data.scoreChange -= 500
-                state.data._lose = True
+                state.data.scoreChange -= 100
+                state.data._lose = False #
     collide = staticmethod( collide )
 
     def canKill( pacmanPosition, ghostPosition ):
@@ -494,9 +494,9 @@ def readCommand( argv ):
                       help='Generate minimal output and no graphics', default=False)
     parser.add_option('-g', '--ghosts', dest='ghost',
                       help=default('the ghost agent TYPE in the ghostAgents module to use'),
-                      metavar = 'TYPE', default='RandomGhost')
+                      metavar = 'TYPE', default='DirectionalGhost')
     parser.add_option('-k', '--numghosts', type='int', dest='numGhosts',
-                      help=default('The maximum number of ghosts to use'), default=4)
+                      help=default('The maximum number of ghosts to use'), default=10)
     parser.add_option('-z', '--zoom', type='float', dest='zoom',
                       help=default('Zoom the size of the graphics window'), default=1.0)
     parser.add_option('-f', '--fixRandomSeed', action='store_true', dest='fixRandomSeed',
@@ -510,11 +510,11 @@ def readCommand( argv ):
     parser.add_option('-x', '--numTraining', dest='numTraining', type='int',
                       help=default('How many episodes are training (suppresses output)'), default=0)
     parser.add_option('--frameTime', dest='frameTime', type='float',
-                      help=default('Time to delay between frames; <0 means keyboard'), default=0.1)
+                      help=default('Time to delay between frames; <0 means keyboard'), default=0.01)
     parser.add_option('-c', '--catchExceptions', action='store_true', dest='catchExceptions',
                       help='Turns on exception handling and timeouts during games', default=False)
     parser.add_option('--timeout', dest='timeout', type='int',
-                      help=default('Maximum length of time an agent can spend computing in a single game'), default=30)
+                      help=default('Maximum length of time an agent can spend computing in a single game'), default=60)
 
     options, otherjunk = parser.parse_args(argv)
     if len(otherjunk) != 0:
