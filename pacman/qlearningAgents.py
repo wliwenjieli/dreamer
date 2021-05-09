@@ -249,10 +249,9 @@ class ApproximateQAgent(PacmanQAgent):
     "Called at the end of each game."
     # call the super-class final method
     PacmanQAgent.final(self, state)
-    file = open("weights.txt", "w")
-    file.write(str(self.weights))
-    # did we finish training?
+
+    # record weights after training
     if self.episodesSoFar == self.numTraining:
-      # you might want to print your weights here for debugging
-      "*** YOUR CODE HERE ***"
+        file = open("weights.txt", "w")
+        file.write(str(self.weights))
       pass
