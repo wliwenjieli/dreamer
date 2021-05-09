@@ -168,6 +168,11 @@ class PacmanQAgent(QLearningAgent):
     args['gamma'] = gamma
     args['alpha'] = alpha
     args['numTraining'] = numTraining
+
+    # read weights from file location, default to training from a fresh start
+    #args['saveWeights'] = saveWeights
+    #args['readWeights'] = readWeights
+
     self.index = 0  # This is always Pacman
     QLearningAgent.__init__(self, **args)
 
@@ -190,7 +195,7 @@ class ApproximateQAgent(PacmanQAgent):
      and update.  All other QLearningAgent functions
      should work as is.
   """
-  def __init__(self, extractor='IdentityExtractor', **args):
+  def __init__(self, extractor='SimpleExtractor', **args):
     self.featExtractor = util.lookup(extractor, globals())()
     PacmanQAgent.__init__(self, **args)
 
@@ -198,7 +203,13 @@ class ApproximateQAgent(PacmanQAgent):
     "*** YOUR CODE HERE ***"
 
     # read weights from file
+    #if readWeights == None:
     self.weights = util.Counter()
+    #else:
+    #import json
+    #with open("weights.json") as f:
+    #    self.weights = json.load(f)
+
   
   def getQValue(self, state, action):
     """
@@ -252,6 +263,6 @@ class ApproximateQAgent(PacmanQAgent):
 
     # record weights after training
     if self.episodesSoFar == self.numTraining:
-        file = open("weights.txt", "w")
+        file = open("weights.json", "w")
         file.write(str(self.weights))
-      pass
+        print(self.weights)

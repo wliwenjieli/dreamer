@@ -13,7 +13,7 @@ import traceback
 #######################
 # Parts worth reading #
 #######################
-
+p_bad_ghost = 0.1
 class Agent:
     """
     An agent must define a getAction method, but may also define the
@@ -663,14 +663,14 @@ class Game:
             self.moveHistory.append( (agentIndex, action) )
             if self.catchExceptions:
                 try:
-                    self.state = self.state.generateSuccessor( agentIndex, action )
+                    self.state = self.state.generateSuccessor( agentIndex, action, p_bad_ghost  )
                 except Exception,data:
                     self.mute(agentIndex)
                     self._agentCrash(agentIndex)
                     self.unmute()
                     return
             else:
-                self.state = self.state.generateSuccessor( agentIndex, action )
+                self.state = self.state.generateSuccessor( agentIndex, action, p_bad_ghost )
 
             # Change the display
             self.display.update( self.state.data )

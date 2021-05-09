@@ -85,7 +85,7 @@ class GameState:
         else:
             return GhostRules.getLegalActions( self, agentIndex )
 
-    def generateSuccessor( self, agentIndex, action):
+    def generateSuccessor( self, agentIndex, action, p_bad_ghost):
         """
         Returns the successor state after the specified agent takes the action.
         """
@@ -109,7 +109,7 @@ class GameState:
             GhostRules.decrementTimer( state.data.agentStates[agentIndex] )
 
         # Resolve multi-agent effects
-        GhostRules.checkDeath( state, agentIndex )
+        GhostRules.checkDeath( state, agentIndex, p_bad_ghost )
 
         # Book keeping
         state.data._agentMoved = agentIndex
@@ -119,11 +119,11 @@ class GameState:
     def getLegalPacmanActions( self ):
         return self.getLegalActions( 0 )
 
-    def generatePacmanSuccessor( self, action ):
+    def generatePacmanSuccessor( self, action, p_bad_ghost ):
         """
         Generates the successor state after the specified pacman move
         """
-        return self.generateSuccessor( 0, action )
+        return self.generateSuccessor( 0, action, p_bad_ghost )
 
     def getPacmanState( self ):
         """
@@ -254,6 +254,7 @@ class GameState:
 SCARED_TIME = 40    # Moves ghosts are scared
 COLLISION_TOLERANCE = 0.7 # How close ghosts must be to Pacman to kill
 TIME_PENALTY = 1 # Number of points lost each round
+p_bad_ghost = 0.1
 
 class ClassicGameRules:
     """
@@ -411,22 +412,22 @@ class GhostRules:
         ghostState.scaredTimer = max( 0, timer - 1 )
     decrementTimer = staticmethod( decrementTimer )
 
-    def checkDeath( state, agentIndex):
+    def checkDeath( state, agentIndex, p_bad_ghost):
         pacmanPosition = state.getPacmanPosition()
         if agentIndex == 0: # Pacman just moved; Anyone can kill him
             for index in range( 1, len( state.data.agentStates ) ):
                 ghostState = state.data.agentStates[index]
                 ghostPosition = ghostState.configuration.getPosition()
                 if GhostRules.canKill( pacmanPosition, ghostPosition ):
-                    GhostRules.collide( state, ghostState, index )
+                    GhostRules.collide( state, ghostState, index, p_bad_ghost)
         else:
             ghostState = state.data.agentStates[agentIndex]
             ghostPosition = ghostState.configuration.getPosition()
             if GhostRules.canKill( pacmanPosition, ghostPosition ):
-                GhostRules.collide( state, ghostState, agentIndex )
+                GhostRules.collide( state, ghostState, agentIndex, p_bad_ghost)
     checkDeath = staticmethod( checkDeath )
 
-    def collide( state, ghostState, agentIndex):
+    def collide( state, ghostState, agentIndex, p_bad_ghost):
         if ghostState.scaredTimer > 0:
             state.data.scoreChange += 200
             GhostRules.placeGhost(state, ghostState)
@@ -434,8 +435,14 @@ class GhostRules:
             # Added for first-person
             state.data._eaten[agentIndex] = True
         else:
+            # only hurts if a ghost is bad
             if not state.data._win:
-                state.data.scoreChange -= 100
+                import random
+                if random.random() < p_bad_ghost:
+                    penalty = 100
+                else:
+                    penalty = 0
+                state.data.scoreChange -= penalty
                 state.data._lose = False #
     collide = staticmethod( collide )
 
@@ -517,9 +524,9 @@ def readCommand( argv ):
     parser.add_option('--timeout', dest='timeout', type='int',
                       help=default('Maximum length of time an agent can spend computing in a single game'), default=60)
 
-    # save weights after finishing training
-    parser.add_option('-w', '--saveWeights', action='store_true', dest='weights',
-                      help='Writes final weights after training to a file (named by the time they were played)', default=False)
+    # probability a ghost is bad
+    #parser.add_option('b', '--badGhostProb', dest='p_bad_ghost', type='float',
+    #                  help=default('The probability that colliding with a ghost will hurt Pacman'), default=1)
 
     options, otherjunk = parser.parse_args(argv)
     if len(otherjunk) != 0:
