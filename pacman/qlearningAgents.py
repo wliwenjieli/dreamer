@@ -110,21 +110,6 @@ class QLearningAgent(ReinforcementAgent):
                 bestActions.append(b)
         return random.choice(bestActions)
     return None
-    """
-    actions = list(self.getLegalActions(state))
-    if actions:
-        maxQ = self.getQValue(state, actions[0])
-        policy = []
-        for a in actions:
-            if self.getQValue(state, a) >= maxQ:
-                maxQ = self.getQValue(state, a)
-        for a in actions:
-            if self.getQValue(state, a) == maxQ:
-                policy.append(a)
-        return random.choice(policy)
-    return None
-    """
-    util.raiseNotDefined()
     
 
   def getAction(self, state):
@@ -211,6 +196,8 @@ class ApproximateQAgent(PacmanQAgent):
 
     # You might want to initialize weights here.
     "*** YOUR CODE HERE ***"
+
+    # read weights from file
     self.weights = util.Counter()
   
   def getQValue(self, state, action):
@@ -224,7 +211,6 @@ class ApproximateQAgent(PacmanQAgent):
     for k in feat.keys():
         if k in self.weights:
             w = self.weights[k]
-            print(w)
             Q += w*feat[k]
         else:
             pass
@@ -263,7 +249,8 @@ class ApproximateQAgent(PacmanQAgent):
     "Called at the end of each game."
     # call the super-class final method
     PacmanQAgent.final(self, state)
-
+    file = open("weights.txt", "w")
+    file.write(str(self.weights))
     # did we finish training?
     if self.episodesSoFar == self.numTraining:
       # you might want to print your weights here for debugging

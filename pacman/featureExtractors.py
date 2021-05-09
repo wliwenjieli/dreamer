@@ -78,11 +78,18 @@ class SimpleExtractor(FeatureExtractor):
     # if there is no danger of ghosts then add the food feature
     if not features["#-of-ghosts-1-step-away"] and food[next_x][next_y]:
       features["eats-food"] = 1.0
-    
+
     dist = closestFood((next_x, next_y), food, walls)
     if dist is not None:
       # make the distance a number less than one otherwise the update
       # will diverge wildly
-      features["closest-food"] = float(dist) / (walls.width * walls.height) 
+      features["closest-food"] = float(dist) / (walls.width * walls.height)
+
+    # distance between pacman and the closest ghost
+    closestGhost = 99999
+    for g in ghosts:
+      closestGhost = min(util.manhattanDistance( g, (x,y) ),closestGhost)
+    features["distance to closest ghost"] = closestGhost
+
     features.divideAll(10.0)
     return features
