@@ -85,7 +85,7 @@ class GameState:
         else:
             return GhostRules.getLegalActions( self, agentIndex )
 
-    def generateSuccessor( self, agentIndex, action, p_bad_ghost):
+    def generateSuccessor( self, agentIndex, action):
         """
         Returns the successor state after the specified agent takes the action.
         """
@@ -93,7 +93,7 @@ class GameState:
         if self.isWin() or self.isLose(): raise Exception('Can\'t generate a successor of a terminal state.')
 
         # Copy current state
-        state = GameState(self)
+        state = GameState(self,p_bad_ghost=self.p_bad_ghost)
 
         # Let agent's logic deal with its action's effects on the board
         if agentIndex == 0:  # Pacman is moving
@@ -109,7 +109,7 @@ class GameState:
             GhostRules.decrementTimer( state.data.agentStates[agentIndex] )
 
         # Resolve multi-agent effects
-        GhostRules.checkDeath( state, agentIndex, p_bad_ghost )
+        GhostRules.checkDeath( state, agentIndex, self.p_bad_ghost)
 
         # Book keeping
         state.data._agentMoved = agentIndex
@@ -119,11 +119,11 @@ class GameState:
     def getLegalPacmanActions( self ):
         return self.getLegalActions( 0 )
 
-    def generatePacmanSuccessor( self, action, p_bad_ghost ):
+    def generatePacmanSuccessor( self, action):
         """
         Generates the successor state after the specified pacman move
         """
-        return self.generateSuccessor( 0, action, p_bad_ghost )
+        return self.generateSuccessor( 0, action)
 
     def getPacmanState( self ):
         """
@@ -209,17 +209,19 @@ class GameState:
     # You shouldn't need to call these directly #
     #############################################
 
-    def __init__( self, prevState = None ):
+    def __init__( self, prevState = None, p_bad_ghost=1.0):
         """
         Generates a new state by copying information from its predecessor.
         """
+        self.p_bad_ghost = p_bad_ghost
         if prevState != None: # Initial state
             self.data = GameStateData(prevState.data)
         else:
             self.data = GameStateData()
 
+
     def deepCopy( self ):
-        state = GameState( self )
+        state = GameState( self ,p_bad_ghost=self.p_bad_ghost)
         state.data = self.data.deepCopy()
         return state
 
@@ -254,7 +256,6 @@ class GameState:
 SCARED_TIME = 40    # Moves ghosts are scared
 COLLISION_TOLERANCE = 0.7 # How close ghosts must be to Pacman to kill
 TIME_PENALTY = 1 # Number of points lost each round
-p_bad_ghost = 0.1
 
 class ClassicGameRules:
     """
@@ -264,9 +265,10 @@ class ClassicGameRules:
     def __init__(self, timeout=30):
         self.timeout = timeout
 
-    def newGame( self, layout, pacmanAgent, ghostAgents, display, quiet = False, catchExceptions=False):
+
+    def newGame( self, p_bad_ghost, layout, pacmanAgent, ghostAgents, display, quiet = False, catchExceptions=False):
         agents = [pacmanAgent] + ghostAgents[:layout.getNumGhosts()]
-        initState = GameState()
+        initState = GameState(p_bad_ghost=p_bad_ghost)
         initState.initialize( layout, len(ghostAgents) )
         game = Game(agents, display, self, catchExceptions=catchExceptions)
         game.state = initState
@@ -283,7 +285,7 @@ class ClassicGameRules:
 
     def win( self, state, game ):
         #if not self.quiet: print "Pacman emerges victorious! Score: %d" % state.data.score
-        if not self.quiet: print "Score: %d" % state.data.score
+        if not self.quiet: print "Score: %d" % state.data.score # since ghost cannot kill Pac-Man now, there is no winning or losing, only score
         game.gameOver = True
 
     def lose( self, state, game ):
@@ -439,7 +441,7 @@ class GhostRules:
             if not state.data._win:
                 import random
                 if random.random() < p_bad_ghost:
-                    penalty = 100
+                    penalty = 200
                 else:
                     penalty = 0
                 state.data.scoreChange -= penalty
@@ -525,13 +527,16 @@ def readCommand( argv ):
                       help=default('Maximum length of time an agent can spend computing in a single game'), default=60)
 
     # probability a ghost is bad
-    #parser.add_option('b', '--badGhostProb', dest='p_bad_ghost', type='float',
-    #                  help=default('The probability that colliding with a ghost will hurt Pacman'), default=1)
+    parser.add_option('-b', '--badGhostProb', dest='p_bad_ghost', type='float',
+                      help=default('The probability that colliding with a ghost will hurt Pacman'), default=1)
 
     options, otherjunk = parser.parse_args(argv)
     if len(otherjunk) != 0:
         raise Exception('Command line input not understood: ' + str(otherjunk))
     args = dict()
+
+    # probability of bad ghost
+    args['p_bad_ghost'] = options.p_bad_ghost
 
     # Fix the random seed
     if options.fixRandomSeed: random.seed('cs188')
@@ -629,7 +634,7 @@ def replayGame( layout, actions, display ):
 
     display.finish()
 
-def runGames( layout, pacman, ghosts, display, numGames, record, numTraining = 0, catchExceptions=False, timeout=30 ):
+def runGames(layout, pacman, ghosts, display, numGames, record, p_bad_ghost, numTraining = 0, catchExceptions=False, timeout=30 ):
     import __main__
     __main__.__dict__['_display'] = display
 
@@ -646,7 +651,7 @@ def runGames( layout, pacman, ghosts, display, numGames, record, numTraining = 0
         else:
             gameDisplay = display
             rules.quiet = False
-        game = rules.newGame( layout, pacman, ghosts, gameDisplay, beQuiet, catchExceptions)
+        game = rules.newGame(p_bad_ghost, layout, pacman, ghosts, gameDisplay, beQuiet, catchExceptions)
         game.run()
         if not beQuiet: games.append(game)
 
