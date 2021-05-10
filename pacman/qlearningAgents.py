@@ -259,7 +259,7 @@ class ApproximateQAgent(PacmanQAgent):
     PacmanQAgent.final(self, state)
 
     # record weights after training
-    if self.episodesSoFar == self.numTraining:
-        file = open("weights.json", "w")
-        file.write(str(self.weights))
-        print(self.weights)
+    #if self.episodesSoFar == self.numTraining:
+    #    file = open("weights.json", "w")
+    #    file.write(str(self.weights))
+    #    print(self.weights)
