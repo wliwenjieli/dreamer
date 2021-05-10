@@ -535,6 +535,9 @@ def readCommand( argv ):
     # probability a ghost is bad
     parser.add_option('-b', '--badGhostProb', dest='p_bad_ghost', type='float',
                       help=default('The probability that colliding with a ghost will hurt Pacman'), default=1)
+                      
+    #checkpoint dir
+    parser.add_option('--checkpoint_dir', dest='checkpoint_dir', help=default('The checkpoint directory location to save/fetch model weights'), default=None)
 
     options, otherjunk = parser.parse_args(argv)
     if len(otherjunk) != 0:
