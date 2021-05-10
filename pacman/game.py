@@ -689,7 +689,7 @@ class Game:
 
             # if attack happens, transfer the nsteptrain to replay buffer
             if attack:
-                # the replayBuffer is a queue of a queue. We want all events in an nStepTrain to always stay together to make memory somehow continuous
+                # the replayBuffer is a queue of a queue. We want all events in an nStepTrain to always stay together to make memory relatively continuous
                 replayBuffer.push(nStepTrain)
                 nStepTrain = Queue()
 

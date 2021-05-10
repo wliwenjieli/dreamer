@@ -532,26 +532,20 @@ def readCommand( argv ):
     parser.add_option('--timeout', dest='timeout', type='int',
                       help=default('Maximum length of time an agent can spend computing in a single game'), default=60)
 
-    # probability a ghost is bad
-    parser.add_option('-b', '--badGhostProb', dest='p_bad_ghost', type='float',
-                      help=default('The probability that colliding with a ghost will hurt Pacman'), default=1)
-
-    # probability a ghost is bad in replay
-    parser.add_option('-m', '--mismatch', dest='mismatch', type='float',
-                      help=default('The probability that a ghost is bad in replay'), default=1)
-
-
+    # bad ghost probability parameters
+    #parser.add_option('-b', '--badGhostProb', dest='p_bad_ghost', type='float',
+                      #help=default('The probability that colliding with a ghost will hurt Pacman'), default=1)
+    parser.add_option('-e', '--episodeProb', dest='episodeProb',
+                      help=default('The probability that a ghost is bad in each experiment episode'), default=[1,1,1])
 
     options, otherjunk = parser.parse_args(argv)
     if len(otherjunk) != 0:
         raise Exception('Command line input not understood: ' + str(otherjunk))
     args = dict()
 
-    # probability of bad ghost
-    args['p_bad_ghost'] = options.p_bad_ghost
-
-    # mismatch parameter: probability of bad ghost in replay
-    args['mismatch'] = options.mismatch
+    # probability parameters
+    #args['p_bad_ghost'] = options.p_bad_ghost
+    args['episodeProb'] = map(float, options.episodeProb.strip('[]').split(','))
 
     # Fix the random seed
     if options.fixRandomSeed: random.seed('cs188')
@@ -649,7 +643,7 @@ def replayGame( layout, actions, display ):
 
     display.finish()
 
-def runGames(layout, pacman, ghosts, display, numGames, record, p_bad_ghost, mismatch = 1, numTraining = 0, catchExceptions=False, timeout=30 ):
+def runGames(layout, pacman, ghosts, display, numGames, record, p_bad_ghost, episodeProb, numTraining = 0, catchExceptions=False, timeout=30 ):
     import __main__
     __main__.__dict__['_display'] = display
 
@@ -686,8 +680,8 @@ def runGames(layout, pacman, ghosts, display, numGames, record, p_bad_ghost, mis
         winRate = wins.count(True)/ float(len(wins))
         print 'Average Score:', sum(scores) / float(len(scores))
         print 'Scores:       ', ', '.join([str(score) for score in scores])
-        print 'Win Rate:      %d/%d (%.2f)' % (wins.count(True), len(wins), winRate)
-        print 'Record:       ', ', '.join([ ['Loss', 'Win'][int(w)] for w in wins])
+        #print 'Win Rate:      %d/%d (%.2f)' % (wins.count(True), len(wins), winRate)
+        #print 'Record:       ', ', '.join([ ['Loss', 'Win'][int(w)] for w in wins])
 
     return games, replayBuffer
 
@@ -702,13 +696,65 @@ if __name__ == '__main__':
 
     > python pacman.py --help
     """
-    args = readCommand( sys.argv[1:] ) # Get game components based on input
-    games, replayBuffer = runGames( **args )
 
     from experienceReplay import ExperienceReplay
-    dream = ExperienceReplay(args['mismatch'])
-    weights = dream.replay(replayBuffer, 10)
 
+    args = readCommand(sys.argv[1:])  # Get game components based on input
+
+    # peace phase 1
+    args['p_bad_ghost'] = args['episodeProb'][0]
+    print "Pac-Man is in a peaceful world for " + str(args['numTraining']) + " episode. A ghost would attack it with probability " + str(args['p_bad_ghost'])
+    games, replayBuffer = runGames(**args)
+
+    # dreaming -- fear consolidation
+    args['p_bad_ghost'] = args['episodeProb'][1]
+    dream = ExperienceReplay(args['p_bad_ghost'])
+    numEvents = 10 # number of events in a dream
+    print "Pac-Man is dreaming for " + str(numEvents) + " episode. A ghost would attack it with probability " + str(args['p_bad_ghost'])
+    weights = dream.replay(replayBuffer, numEvents)
+
+    # awake: war zone
+    args['p_bad_ghost'] = args['episodeProb'][2]
+    print "Pac-Man is at war zone for " + str(args['numTraining']) + " episode. A ghost would attack it with probability " + str(args['p_bad_ghost'])
+    games, replayBuffer = runGames(**args)
+
+    # dreaming -- fear extinction
+    args['p_bad_ghost'] = args['episodeProb'][3]
+    dream = ExperienceReplay(args['p_bad_ghost'])
+    numEvents = 10 # number of events in a dream
+    print "Pac-Man is dreaming for " + str(numEvents) + " episode. A ghost would attack it with probability " + str(args['p_bad_ghost'])
+    weights = dream.replay(replayBuffer, numEvents)
+
+    # awake: peace zone
+    args['p_bad_ghost'] = args['episodeProb'][4]
+    print "Pac-Man is in a peaceful world for " + str(args['numTraining']) + " episode. A ghost would attack it with probability " + str(args['p_bad_ghost'])
+    games, _ = runGames(**args)
+
+    """
+    full_args = readCommand( sys.argv[1:] ) # Get game components based on input
+
+    if not full_args['fullExperiment']:
+        args = full_args
+        args.pop('mismatch')
+        args.pop('episodeProb')
+        args.pop('fullExperiment')
+        games, _ = runGames( **args )
+    else:
+        for episodes in range(len(full_args['episodeProb'])-1):
+            args = full_args
+            args.pop('mismatch')
+            args.pop('episodeProb')
+            args.pop('fullExperiment')
+            args['p_bad_ghost'] = full_args['episodeProb'][episodes]
+
+            # awake
+            games, replayBuffer = runGames(**args)
+
+            # dreaming
+            from experienceReplay import ExperienceReplay
+            dream = ExperienceReplay(full_args['mismatch'])
+            weights = dream.replay(replayBuffer, 10)
+    """
     # import cProfile
     # cProfile.run("runGames( **args )")
     pass
