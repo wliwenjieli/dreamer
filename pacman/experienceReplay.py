@@ -3,17 +3,11 @@ import numpy as np
 from qlearningAgents import ApproximateQAgent
 
 class ExperienceReplay(ApproximateQAgent):
-    def __init__(self, mismatch=1.0, weights=None):
-        ApproximateQAgent.__init__(self)
+    def __init__(self, mismatch=1.0, **args):
+        ApproximateQAgent.__init__(self, **args)
 
         # mismatch parameter: the probability that a ghost is bad in replay
         self.mismatch = mismatch
-
-        # read weights from previous training (awake) session
-        if weights != None:
-            self.weights = weights
-        else:
-            self.weights = util.Counter()
 
     def replay(self, replayBuffer, capacity):
         # randomly sample events to add to the buffer until it reaches capacity
