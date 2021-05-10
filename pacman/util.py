@@ -62,6 +62,13 @@ class Queue:
             Q.push(self.list.pop())
         return Q
 
+    def copy2stack(self):
+        "copy a queue to a stack"
+        Q = Stack()
+        for item in self.list:
+            Q.push(item)
+        return Q
+
     def printQueue(self):
         print(self.list)
 
