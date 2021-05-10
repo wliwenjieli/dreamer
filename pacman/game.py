@@ -680,7 +680,7 @@ class Game:
 
             # make an event tuple
             reward = self.state.getScore() - old_state.getScore()
-            event = (old_state, action, reward, self.state) # I don't think we need to add reward since it is predictable based on the two states?
+            event = (old_state, action, self.state, reward) # I don't think we need to add reward since it is predictable based on the two states?
 
             # add new state to nsteptrain (n=3)
             if nStepTrain.size() >= 3:
