@@ -544,11 +544,11 @@ class Game:
         self.display.initialize(self.state.data)
         self.numMoves = 0
 
+        # always contain the latest n events (n=3)
+        nStepTrain = Queue()
+
         # replay buffer for this game run
         replayBuffer = Queue()
-
-        # always contain n most recent events
-        nStepTrain = Queue()
 
         ###self.display.initialize(self.state.makeObservation(1).data)
         # inform learning agents of the game start
@@ -679,7 +679,8 @@ class Game:
                 self.state, attack = self.state.generateSuccessor( agentIndex, action)
 
             # make an event tuple
-            event = (old_state, action, self.state) # I don't think we need to add reward since it is predictable based on the two states?
+            reward = self.state.getScore() - old_state.getScore()
+            event = (old_state, action, reward, self.state) # I don't think we need to add reward since it is predictable based on the two states?
 
             # add new state to nsteptrain (n=3)
             if nStepTrain.size() >= 3:
@@ -688,7 +689,8 @@ class Game:
 
             # if attack happens, transfer the nsteptrain to replay buffer
             if attack:
-                replayBuffer = replayBuffer.merge(nStepTrain)
+                # the replayBuffer is a queue of a queue. We want all events in an nStepTrain to always stay together to make memory somehow continuous
+                replayBuffer.push(nStepTrain)
                 nStepTrain = Queue()
 
 
@@ -719,6 +721,5 @@ class Game:
                     self._agentCrash(agentIndex)
                     self.unmute()
                     return
-
         return replayBuffer
         self.display.finish()

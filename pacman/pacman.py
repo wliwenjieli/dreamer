@@ -680,7 +680,6 @@ def runGames(layout, pacman, ghosts, display, numGames, record, p_bad_ghost, num
         print 'Win Rate:      %d/%d (%.2f)' % (wins.count(True), len(wins), winRate)
         print 'Record:       ', ', '.join([ ['Loss', 'Win'][int(w)] for w in wins])
 
-
     return games, replayBuffer
 
 if __name__ == '__main__':
@@ -696,6 +695,10 @@ if __name__ == '__main__':
     """
     args = readCommand( sys.argv[1:] ) # Get game components based on input
     games, replayBuffer = runGames( **args )
+
+    #from experienceReplay import ExperienceReplay
+    #dream = ExperienceReplay()
+    #weights = dream.replay(replayBuffer, 10)
 
     # import cProfile
     # cProfile.run("runGames( **args )")

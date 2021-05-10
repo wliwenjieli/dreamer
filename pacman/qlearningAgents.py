@@ -250,13 +250,16 @@ class ApproximateQAgent(PacmanQAgent):
         else:
             self.weights[k] = self.alpha * correction * feat[k]
 
-    return
+    return self.weights
     util.raiseNotDefined()
 
   def final(self, state):
     "Called at the end of each game."
     # call the super-class final method
     PacmanQAgent.final(self, state)
+
+    # print final weights
+    #print(self.weights)
 
     # record weights after training
     #if self.episodesSoFar == self.numTraining:
