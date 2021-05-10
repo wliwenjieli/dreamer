@@ -27,10 +27,18 @@ class ExperienceReplay(ApproximateQAgent):
 
         # replay
         for idx in indices:
-            # we don't want to erase the buffer since it could be resampled
+            # we don't want to erase the buffer since it could be re-sampled
             tmpBuffer = buffer[idx].copy2stack()
             while not tmpBuffer.isEmpty():
+                # each buffer[idx] contains one event; an event has n episodes
                 state, action, nextState, reward = tmpBuffer.pop()
+
+                # mismatch step: under with prob(mismatch) ghost doesn't attack at the end of the event
+                if tmpBuffer.isEmpty(): # this is the last episode of an event
+                    if np.random.random() > self.mismatch:
+                        reward = 0
+
+                # update weights
                 self.weights = self.update(state, action, nextState, reward)
 
         return self.weights

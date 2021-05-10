@@ -536,6 +536,12 @@ def readCommand( argv ):
     parser.add_option('-b', '--badGhostProb', dest='p_bad_ghost', type='float',
                       help=default('The probability that colliding with a ghost will hurt Pacman'), default=1)
 
+    # probability a ghost is bad in replay
+    parser.add_option('-m', '--mismatch', dest='mismatch', type='float',
+                      help=default('The probability that a ghost is bad in replay'), default=1)
+
+
+
     options, otherjunk = parser.parse_args(argv)
     if len(otherjunk) != 0:
         raise Exception('Command line input not understood: ' + str(otherjunk))
@@ -543,6 +549,9 @@ def readCommand( argv ):
 
     # probability of bad ghost
     args['p_bad_ghost'] = options.p_bad_ghost
+
+    # mismatch parameter: probability of bad ghost in replay
+    args['mismatch'] = options.mismatch
 
     # Fix the random seed
     if options.fixRandomSeed: random.seed('cs188')
@@ -640,7 +649,7 @@ def replayGame( layout, actions, display ):
 
     display.finish()
 
-def runGames(layout, pacman, ghosts, display, numGames, record, p_bad_ghost, numTraining = 0, catchExceptions=False, timeout=30 ):
+def runGames(layout, pacman, ghosts, display, numGames, record, p_bad_ghost, mismatch = 1, numTraining = 0, catchExceptions=False, timeout=30 ):
     import __main__
     __main__.__dict__['_display'] = display
 
@@ -696,9 +705,9 @@ if __name__ == '__main__':
     args = readCommand( sys.argv[1:] ) # Get game components based on input
     games, replayBuffer = runGames( **args )
 
-    #from experienceReplay import ExperienceReplay
-    #dream = ExperienceReplay()
-    #weights = dream.replay(replayBuffer, 10)
+    from experienceReplay import ExperienceReplay
+    dream = ExperienceReplay(args['mismatch'])
+    weights = dream.replay(replayBuffer, 10)
 
     # import cProfile
     # cProfile.run("runGames( **args )")
