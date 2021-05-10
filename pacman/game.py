@@ -544,6 +544,12 @@ class Game:
         self.display.initialize(self.state.data)
         self.numMoves = 0
 
+        # replay buffer for this game run
+        replayBuffer = Queue()
+
+        # always contain n most recent events
+        nStepTrain = Queue()
+
         ###self.display.initialize(self.state.makeObservation(1).data)
         # inform learning agents of the game start
         for i in range(len(self.agents)):
@@ -669,7 +675,22 @@ class Game:
                     self.unmute()
                     return
             else:
-                self.state = self.state.generateSuccessor( agentIndex, action)
+                old_state = self.state
+                self.state, attack = self.state.generateSuccessor( agentIndex, action)
+
+            # make an event tuple
+            event = (old_state, action, self.state) # I don't think we need to add reward since it is predictable based on the two states?
+
+            # add new state to nsteptrain (n=3)
+            if nStepTrain.size() >= 3:
+                nStepTrain.pop()
+            nStepTrain.push(event)
+
+            # if attack happens, transfer the nsteptrain to replay buffer
+            if attack:
+                replayBuffer = replayBuffer.merge(nStepTrain)
+                nStepTrain = Queue()
+
 
             # Change the display
             self.display.update( self.state.data )
@@ -698,4 +719,6 @@ class Game:
                     self._agentCrash(agentIndex)
                     self.unmute()
                     return
+
+        return replayBuffer
         self.display.finish()

@@ -169,9 +169,6 @@ class PacmanQAgent(QLearningAgent):
     args['alpha'] = alpha
     args['numTraining'] = numTraining
 
-    # read weights from file location, default to training from a fresh start
-    #args['saveWeights'] = saveWeights
-    #args['readWeights'] = readWeights
 
     self.index = 0  # This is always Pacman
     QLearningAgent.__init__(self, **args)

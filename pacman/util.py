@@ -52,6 +52,19 @@ class Queue:
         "Returns true if the queue is empty"
         return len(self.list) == 0
 
+    def size(self):
+        "Return the length of the queue"
+        return len(self.list)
+
+    def merge(self, Q):
+        "merge two queues"
+        while len(self.list) != 0:
+            Q.push(self.list.pop())
+        return Q
+
+    def printQueue(self):
+        print(self.list)
+
 class PriorityQueue:
     """
       Implements a priority queue data structure. Each inserted item

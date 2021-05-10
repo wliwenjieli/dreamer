@@ -39,6 +39,7 @@ from game import Directions
 from game import Actions
 from util import nearestPoint
 from util import manhattanDistance
+from util import Queue
 import util, layout
 import sys, types, time, random, os
 
@@ -109,12 +110,12 @@ class GameState:
             GhostRules.decrementTimer( state.data.agentStates[agentIndex] )
 
         # Resolve multi-agent effects
-        GhostRules.checkDeath( state, agentIndex, self.p_bad_ghost)
+        attack = GhostRules.checkDeath( state, agentIndex, self.p_bad_ghost)
 
         # Book keeping
         state.data._agentMoved = agentIndex
         state.data.score += state.data.scoreChange
-        return state
+        return state, attack
 
     def getLegalPacmanActions( self ):
         return self.getLegalActions( 0 )
@@ -415,21 +416,24 @@ class GhostRules:
     decrementTimer = staticmethod( decrementTimer )
 
     def checkDeath( state, agentIndex, p_bad_ghost):
+        attack = False
         pacmanPosition = state.getPacmanPosition()
         if agentIndex == 0: # Pacman just moved; Anyone can kill him
             for index in range( 1, len( state.data.agentStates ) ):
                 ghostState = state.data.agentStates[index]
                 ghostPosition = ghostState.configuration.getPosition()
                 if GhostRules.canKill( pacmanPosition, ghostPosition ):
-                    GhostRules.collide( state, ghostState, index, p_bad_ghost)
+                    attack = GhostRules.collide( state, ghostState, index, p_bad_ghost)
         else:
             ghostState = state.data.agentStates[agentIndex]
             ghostPosition = ghostState.configuration.getPosition()
             if GhostRules.canKill( pacmanPosition, ghostPosition ):
-                GhostRules.collide( state, ghostState, agentIndex, p_bad_ghost)
+                attack = GhostRules.collide( state, ghostState, agentIndex, p_bad_ghost)
+        return attack
     checkDeath = staticmethod( checkDeath )
 
     def collide( state, ghostState, agentIndex, p_bad_ghost):
+        attack = False
         if ghostState.scaredTimer > 0:
             state.data.scoreChange += 200
             GhostRules.placeGhost(state, ghostState)
@@ -442,10 +446,12 @@ class GhostRules:
                 import random
                 if random.random() < p_bad_ghost:
                     penalty = 200
+                    attack = True
                 else:
                     penalty = 0
                 state.data.scoreChange -= penalty
                 state.data._lose = False #
+        return attack
     collide = staticmethod( collide )
 
     def canKill( pacmanPosition, ghostPosition ):
@@ -626,7 +632,7 @@ def replayGame( layout, actions, display ):
 
     for action in actions:
             # Execute the action
-        state = state.generateSuccessor( *action )
+        state, _ = state.generateSuccessor( *action )
         # Change the display
         display.update( state.data )
         # Allow for game specific conditions (winning, losing, etc.)
@@ -640,6 +646,8 @@ def runGames(layout, pacman, ghosts, display, numGames, record, p_bad_ghost, num
 
     rules = ClassicGameRules(timeout)
     games = []
+    replayBuffer = Queue()
+
 
     for i in range( numGames ):
         beQuiet = i < numTraining
@@ -652,7 +660,7 @@ def runGames(layout, pacman, ghosts, display, numGames, record, p_bad_ghost, num
             gameDisplay = display
             rules.quiet = False
         game = rules.newGame(p_bad_ghost, layout, pacman, ghosts, gameDisplay, beQuiet, catchExceptions)
-        game.run()
+        game.run().merge(replayBuffer)
         if not beQuiet: games.append(game)
 
         if record:
@@ -673,7 +681,7 @@ def runGames(layout, pacman, ghosts, display, numGames, record, p_bad_ghost, num
         print 'Record:       ', ', '.join([ ['Loss', 'Win'][int(w)] for w in wins])
 
 
-    return games
+    return games, replayBuffer
 
 if __name__ == '__main__':
     """
@@ -687,7 +695,7 @@ if __name__ == '__main__':
     > python pacman.py --help
     """
     args = readCommand( sys.argv[1:] ) # Get game components based on input
-    runGames( **args )
+    games, replayBuffer = runGames( **args )
 
     # import cProfile
     # cProfile.run("runGames( **args )")
