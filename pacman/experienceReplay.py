@@ -30,7 +30,7 @@ class ExperienceReplay(ApproximateQAgent):
             # we don't want to erase the buffer since it could be re-sampled
             tmpBuffer = buffer[idx].copy2stack()
             while not tmpBuffer.isEmpty():
-                # each buffer[idx] contains one event; an event has n episodes
+                # each buffer[idx] contains one event, an event has n episodes
                 state, action, nextState, reward = tmpBuffer.pop()
 
                 # mismatch step: under with prob(mismatch) ghost doesn't attack at the end of the event
