@@ -10,21 +10,6 @@ p2
 (dp3
 S'#-of-ghosts-1-step-away'
 p4
-<<<<<<< HEAD
-F-465.22748701479844
-sS'closest-food'
-p5
-F-32.46334860246288
-sS'bias'
-p6
-F-601.2791226737417
-sS'distance to closest ghost'
-p7
-F-81.71809240429303
-sS'eats-food'
-p8
-F-72.22230909546829
-=======
 F-64.93341804863863
 sS'closest-food'
 p5
@@ -38,7 +23,6 @@ F50.81892351124444
 sS'eats-food'
 p8
 F23.91046675649621
->>>>>>> 87f503ff575baf05ec39bf82963b1b703f6256ff
 stp9
 Rp10
 .

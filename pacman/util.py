@@ -118,11 +118,6 @@ def manhattanDistance( xy1, xy2 ):
     "Returns the Manhattan distance between points xy1 and xy2"
     return abs( xy1[0] - xy2[0] ) + abs( xy1[1] - xy2[1] )
 
-def find_p_in_dream(buffer1, buffer2, numTrain1, numTrain2, p1, p2):
-    #normalize = buffer1.size()
-    #return (buffer1.size()/numTrain1 + buffer2.size()/numTrain2)/ 2
-    return (p1+p2)/2
-
 """
   Data structures and functions useful for various course projects
 
