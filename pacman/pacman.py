@@ -538,6 +538,9 @@ def readCommand( argv ):
     parser.add_option('-e', '--episodeProb', dest='episodeProb',
                       help=default('The probability that a ghost is bad in each experiment episode'), default=[1,1,1])
 
+    #checkpoint dir
+    parser.add_option('--checkpoint_dir', dest='checkpoint_dir', help=default('The checkpoint directory location to save/fetch model weights'), default=None)
+
     options, otherjunk = parser.parse_args(argv)
     if len(otherjunk) != 0:
         raise Exception('Command line input not understood: ' + str(otherjunk))
@@ -546,7 +549,7 @@ def readCommand( argv ):
     # probability parameters
     #args['p_bad_ghost'] = options.p_bad_ghost
     args['episodeProb'] = map(float, options.episodeProb.strip('[]').split(','))
-
+    args['checkpoint_dir']  = options.checkpoint_dir
     # Fix the random seed
     if options.fixRandomSeed: random.seed('cs188')
 
@@ -558,6 +561,9 @@ def readCommand( argv ):
     noKeyboard = options.gameToReplay == None and (options.textGraphics or options.quietGraphics)
     pacmanType = loadAgent(options.pacman, noKeyboard)
     agentOpts = parseAgentArgs(options.agentArgs)
+    
+    agentOpts['checkpoint_dir'] = options.checkpoint_dir
+    
     if options.numTraining > 0:
         args['numTraining'] = options.numTraining
         if 'numTraining' not in agentOpts: agentOpts['numTraining'] = options.numTraining
@@ -643,7 +649,7 @@ def replayGame( layout, actions, display ):
 
     display.finish()
 
-def runGames(layout, pacman, ghosts, display, numGames, record, p_bad_ghost, episodeProb, numTraining = 0, catchExceptions=False, timeout=30 ):
+def runGames(layout, pacman, ghosts, display, checkpoint_dir, numGames, record, p_bad_ghost, episodeProb, numTraining = 0, catchExceptions=False, timeout=30 ):
     import __main__
     __main__.__dict__['_display'] = display
 
@@ -708,7 +714,7 @@ if __name__ == '__main__':
 
     # dreaming -- fear consolidation
     args['p_bad_ghost'] = args['episodeProb'][1]
-    dream = ExperienceReplay(args['p_bad_ghost'])
+    dream = ExperienceReplay(args['p_bad_ghost'], **args)
     numEvents = 10 # number of events in a dream
     print "Pac-Man is dreaming for " + str(numEvents) + " episode. A ghost would attack it with probability " + str(args['p_bad_ghost'])
     weights = dream.replay(replayBuffer, numEvents)
@@ -720,7 +726,7 @@ if __name__ == '__main__':
 
     # dreaming -- fear extinction
     args['p_bad_ghost'] = args['episodeProb'][3]
-    dream = ExperienceReplay(args['p_bad_ghost'])
+    dream = ExperienceReplay(args['p_bad_ghost'], **args)
     numEvents = 10 # number of events in a dream
     print "Pac-Man is dreaming for " + str(numEvents) + " episode. A ghost would attack it with probability " + str(args['p_bad_ghost'])
     weights = dream.replay(replayBuffer, numEvents)

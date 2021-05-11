@@ -12,6 +12,10 @@ class ExperienceReplay(ApproximateQAgent):
     def replay(self, replayBuffer, capacity):
         # randomly sample events to add to the buffer until it reaches capacity
         buffer = []
+
+        if replayBuffer.isEmpty():
+            return
+
         while not replayBuffer.isEmpty():
             # replayBuffer pops a queue of n events
             buffer.append(replayBuffer.pop())

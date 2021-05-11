@@ -11,6 +11,7 @@ from learningAgents import ReinforcementAgent
 from featureExtractors import *
 
 import random,util,math
+import pickle
 
 
 
@@ -200,12 +201,16 @@ class ApproximateQAgent(PacmanQAgent):
     "*** YOUR CODE HERE ***"
 
     # read weights from file
-    #if readWeights == None:
-    self.weights = util.Counter()
-    #else:
-    #import json
-    #with open("weights.json") as f:
-    #    self.weights = json.load(f)
+    self.checkpoint = args["checkpoint_dir"]
+    if self.checkpoint:
+        #checkpoint_dir should have full file path, including file name
+        try:
+            f = open(self.checkpoint,"rb")
+            self.weights = pickle.load(f)
+        except EOFError:
+            self.weights = util.Counter()
+    else:
+        self.weights = util.Counter()
 
   
   def getQValue(self, state, action):
@@ -260,6 +265,12 @@ class ApproximateQAgent(PacmanQAgent):
 
     # print final weights
     #print(self.weights)
+    if self.episodesSoFar == self.numTraining and self.checkpoint:
+        f = open(self.checkpoint,"wb")
+        pickle.dump(self.weights,f)
+        f.close()
+
+    print(self.weights)
 
     # record weights after training
     #if self.episodesSoFar == self.numTraining:
