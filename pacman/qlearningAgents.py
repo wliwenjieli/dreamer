@@ -211,7 +211,7 @@ class ApproximateQAgent(PacmanQAgent):
             self.weights = util.Counter()
     else:
         self.weights = util.Counter()
-
+    print("In init", self.weights)
   
   def getQValue(self, state, action):
     """
