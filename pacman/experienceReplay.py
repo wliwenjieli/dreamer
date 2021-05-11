@@ -1,6 +1,7 @@
 import util
 import numpy as np
 from qlearningAgents import ApproximateQAgent
+import pickle
 
 class ExperienceReplay(ApproximateQAgent):
     def __init__(self, mismatch=1.0, **args):
@@ -14,6 +15,7 @@ class ExperienceReplay(ApproximateQAgent):
         buffer = []
 
         if replayBuffer.isEmpty():
+            print("Pac-Man does not have fear memory")
             return
 
         while not replayBuffer.isEmpty():
@@ -38,6 +40,12 @@ class ExperienceReplay(ApproximateQAgent):
 
                 # update weights
                 self.weights = self.update(state, action, nextState, reward)
+
+        f = open(self.checkpoint, "wb")
+        pickle.dump(self.weights, f)
+        print(self.weights)
+        print('---------')
+        f.close()
 
         return self.weights
 

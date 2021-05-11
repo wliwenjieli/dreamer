@@ -736,31 +736,7 @@ if __name__ == '__main__':
     print "Pac-Man is in a peaceful world for " + str(args['numTraining']) + " episode. A ghost would attack it with probability " + str(args['p_bad_ghost'])
     games, _ = runGames(**args)
 
-    """
-    full_args = readCommand( sys.argv[1:] ) # Get game components based on input
 
-    if not full_args['fullExperiment']:
-        args = full_args
-        args.pop('mismatch')
-        args.pop('episodeProb')
-        args.pop('fullExperiment')
-        games, _ = runGames( **args )
-    else:
-        for episodes in range(len(full_args['episodeProb'])-1):
-            args = full_args
-            args.pop('mismatch')
-            args.pop('episodeProb')
-            args.pop('fullExperiment')
-            args['p_bad_ghost'] = full_args['episodeProb'][episodes]
-
-            # awake
-            games, replayBuffer = runGames(**args)
-
-            # dreaming
-            from experienceReplay import ExperienceReplay
-            dream = ExperienceReplay(full_args['mismatch'])
-            weights = dream.replay(replayBuffer, 10)
-    """
     # import cProfile
     # cProfile.run("runGames( **args )")
     pass

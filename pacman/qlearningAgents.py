@@ -271,6 +271,7 @@ class ApproximateQAgent(PacmanQAgent):
         f.close()
 
     print(self.weights)
+    print('---------')
 
     # record weights after training
     #if self.episodesSoFar == self.numTraining:
