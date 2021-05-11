@@ -542,7 +542,6 @@ def readCommand( argv ):
 
     #checkpoint dir
     parser.add_option('--checkpoint_dir', dest='checkpoint_dir', help=default('The checkpoint directory location to save/fetch model weights'), default=None)
-
     options, otherjunk = parser.parse_args(argv)
     if len(otherjunk) != 0:
         raise Exception('Command line input not understood: ' + str(otherjunk))
@@ -563,20 +562,22 @@ def readCommand( argv ):
     noKeyboard = options.gameToReplay == None and (options.textGraphics or options.quietGraphics)
     pacmanType = loadAgent(options.pacman, noKeyboard)
     agentOpts = parseAgentArgs(options.agentArgs)
-    
     agentOpts['checkpoint_dir'] = options.checkpoint_dir
     
     if options.numTraining > 0:
         args['numTraining'] = options.numTraining
         if 'numTraining' not in agentOpts: agentOpts['numTraining'] = options.numTraining
+
+    #print(pacmanType)
     pacman = pacmanType(**agentOpts) # Instantiate Pacman with agentArgs
+
     args['pacman'] = pacman
 
     # Don't display training games
     if 'numTrain' in agentOpts:
         options.numQuiet = int(agentOpts['numTrain'])
         options.numIgnore = int(agentOpts['numTrain'])
-
+        
     # Choose a ghost agent
     ghostType = loadAgent(options.ghost, noKeyboard)
     args['ghosts'] = [ghostType( i+1 ) for i in range( options.numGhosts )]
@@ -596,7 +597,6 @@ def readCommand( argv ):
     args['record'] = options.record
     args['catchExceptions'] = options.catchExceptions
     args['timeout'] = options.timeout
-
     # Special case: recorded games don't use the runGames method or args structure
     if options.gameToReplay != None:
         print 'Replaying recorded game %s.' % options.gameToReplay
@@ -608,7 +608,7 @@ def readCommand( argv ):
         replayGame(**recorded)
         sys.exit(0)
 
-    return args
+    return args, agentOpts, pacmanType
 
 def loadAgent(pacman, nographics):
     # Looks through all pythonPath Directories for the right module,
@@ -706,6 +706,7 @@ if __name__ == '__main__':
     """
 
     from experienceReplay import ExperienceReplay
+<<<<<<< HEAD
 
     args = readCommand(sys.argv[1:])  # Get game components based on input
     numTrain = args['numTraining'] # number of regular training session
@@ -719,6 +720,17 @@ if __name__ == '__main__':
     print "Pac-Man is in a peaceful world for " + str(numTrain) + " episode. A ghost would attack it with probability " + str(args['p_bad_ghost'])
     _ , replayBuffer = runGames(**args)
     # start to shift to war zone
+=======
+    
+    args, agentOpts, pacmanType = readCommand(sys.argv[1:])  # Get game components based on input
+    
+    # peace phase 1
+    args['p_bad_ghost'] = args['episodeProb'][0]
+    print "Pac-Man is in a peaceful world for " + str(args['numTraining']) + " episode. A ghost would attack it with probability " + str(args['p_bad_ghost'])
+    games, replayBuffer = runGames(**args)
+    
+    # dreaming -- fear consolidation
+>>>>>>> 87f503ff575baf05ec39bf82963b1b703f6256ff
     args['p_bad_ghost'] = args['episodeProb'][1]
     args['numTraining'] = numTransit
     _ , placeholderBuffer = runGames(**args)
@@ -729,7 +741,17 @@ if __name__ == '__main__':
     dream = ExperienceReplay(args['p_bad_ghost'], **args)
     print "Pac-Man is dreaming for " + str(numEvents) + " episode. A ghost would attack it with probability " + str(args['p_bad_ghost'])
     weights = dream.replay(replayBuffer, numEvents)
+<<<<<<< HEAD
 
+=======
+    
+    # awake: war zone
+    args['p_bad_ghost'] = args['episodeProb'][2]
+    print "Pac-Man is at war zone for " + str(args['numTraining']) + " episode. A ghost would attack it with probability " + str(args['p_bad_ghost'])
+    pacman = pacmanType(**agentOpts) # Instantiate Pacman with agentArgs
+    args['pacman'] = pacman
+    games, replayBuffer = runGames(**args)
+>>>>>>> 87f503ff575baf05ec39bf82963b1b703f6256ff
 
     # awake phase 2
     # war zone
@@ -751,10 +773,19 @@ if __name__ == '__main__':
     weights = dream.replay(replayBuffer, numEvents)
 
     # awake: peace zone
+<<<<<<< HEAD
     args['p_bad_ghost'] = args['episodeProb'][0]
     args['numTraining'] = numTrain
     print "Pac-Man is in a peaceful world for " + str(numTrain) + " episode. A ghost would attack it with probability " + str(args['p_bad_ghost'])
     _ , replayBuffer = runGames(**args)
+=======
+    args['p_bad_ghost'] = args['episodeProb'][4]
+    print "Pac-Man is in a peaceful world for " + str(args['numTraining']) + " episode. A ghost would attack it with probability " + str(args['p_bad_ghost'])
+    pacman = pacmanType(**agentOpts) # Instantiate Pacman with agentArgs
+    args['pacman'] = pacman
+    games, _ = runGames(**args)
+    
+>>>>>>> 87f503ff575baf05ec39bf82963b1b703f6256ff
 
     # import cProfile
     # cProfile.run("runGames( **args )")
