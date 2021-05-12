@@ -288,7 +288,7 @@ class ClassicGameRules:
 
     def win( self, state, game ):
         #if not self.quiet: print "Pacman emerges victorious! Score: %d" % state.data.score
-        if not self.quiet: print "Score: %d" % state.data.score # since ghost cannot kill Pac-Man now, there is no winning or losing, only score
+        #if not self.quiet: print "Score: %d" % state.data.score # since ghost cannot kill Pac-Man now, there is no winning or losing, only score
         game.gameOver = True
 
     def lose( self, state, game ):
@@ -682,12 +682,12 @@ def runGames(layout, pacman, ghosts, display, checkpoint_dir, numGames, record, 
             cPickle.dump(components, f)
             f.close()
 
-    if (numGames-numTraining) > 0:
+    #if (numGames-numTraining) > 0:
+    if True:
         scores = [game.state.getScore() for game in games]
-        wins = [game.state.isWin() for game in games]
-        winRate = wins.count(True)/ float(len(wins))
-        print 'Average Score:', sum(scores) / float(len(scores))
-        print 'Scores:       ', ', '.join([str(score) for score in scores])
+        length=int(min(len(scores),5))
+        print 'Average Score:', sum(scores[-length:]) / length
+        print 'Scores:       ', ', '.join([str(score) for score in scores[-length:]])
         #print 'Win Rate:      %d/%d (%.2f)' % (wins.count(True), len(wins), winRate)
         #print 'Record:       ', ', '.join([ ['Loss', 'Win'][int(w)] for w in wins])
 
@@ -712,7 +712,7 @@ def experimentStep(args, agentOpts, pacmanType, dream, numEpisodes, war=False, r
     # Start training
     if dream:
         args['p_bad_ghost'] = dream_p_bad_ghost
-        args['numTraining'] = numEpisodes
+        args['numGames'] = numEpisodes
         args['beQuiet'] = True
         dream = ExperienceReplay(**args)
         print "A ghost attacks Pac-Man with probability " + str(args['p_bad_ghost']) + "."
@@ -721,14 +721,14 @@ def experimentStep(args, agentOpts, pacmanType, dream, numEpisodes, war=False, r
     else:
         if war:
             args['p_bad_ghost'] = war_p_bad_ghost
-            args['numTraining'] = numEpisodes
+            args['numGames'] = numEpisodes
             args['beQuiet'] = False
             print "A ghost attacks Pac-Man with probability " + str(args['p_bad_ghost']) + "."
             _, replayBuffer = runGames(**args)
             return replayBuffer
         else:
             args['p_bad_ghost'] = peace_p_bad_ghost
-            args['numTraining'] = numEpisodes
+            args['numGames'] = numEpisodes
             args['beQuiet'] = False
             print "A ghost attacks Pac-Man with probability " + str(args['p_bad_ghost']) + "."
             _, replayBuffer = runGames(**args)
@@ -748,22 +748,26 @@ if __name__ == '__main__':
 
     from experienceReplay import ExperienceReplay
     args, agentOpts, pacmanType = readCommand(sys.argv[1:])  # Get game components based on input
-    numEpisodes = args['numTraining'] # number of regular training session
+    numEpisodes = args['numGames'] # number of regular training session
     numTransit = np.ceil(numEpisodes * 0.1) # number of training sessions in transit
     numDream = 9999  # number of events in a dream
     numTest = np.ceil(numEpisodes * 0.1)
     replayBuffer = Queue()
 
     print "Pac-Man grows up in peace for "+str(numEpisodes)+" episodes..."
-    replayBuffer=replayBuffer.merge(experimentStep(args,agentOpts,pacmanType,False,numEpisodes))
+    buffer=experimentStep(args,agentOpts,pacmanType,False,numEpisodes)
+    replayBuffer = replayBuffer.merge(buffer)
 
     # fear consolidation
     print "Pac-Man goes to war for "+str(5)+" episodes..."
-    replayBuffer=replayBuffer.merge(experimentStep(args,agentOpts,pacmanType,False,2,war=True))
+    buffer=experimentStep(args,agentOpts,pacmanType,False,5,war=True)
+    replayBuffer = replayBuffer.merge(buffer)
 
     print "Pac-Man dreams at war camp..."
     experimentStep(args,agentOpts,pacmanType,True,numDream,replayBuffer=replayBuffer) # fear consolidation training
 
-    print "Pac-Man wakes up and go to war for "+str(2)+" episodes..."
-    replayBuffer=replayBuffer.merge(experimentStep(args,agentOpts,pacmanType,False,2,war=True)) # testing
+    print "Pac-Man wakes up and go to war for "+str(5)+" episodes..."
+    replayBuffer=replayBuffer.merge(experimentStep(args,agentOpts,pacmanType,False,5,war=True)) # testing
     pass
+
+

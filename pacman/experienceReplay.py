@@ -22,7 +22,7 @@ class ExperienceReplay(ApproximateQAgent):
             # replayBuffer pops a queue of n events
             buffer.append(replayBuffer.pop())
 
-        capacity = min(replayBuffer.size(),100)
+        capacity = min(len(buffer),100)
         # randomly sample memories from the buffer
         indices = np.random.choice(len(buffer), capacity, replace=True)
 
@@ -41,6 +41,7 @@ class ExperienceReplay(ApproximateQAgent):
 
                 # update weights
                 self.weights = self.update(state, action, nextState, reward)
+                print(self.weights)
 
         f = open(self.checkpoint, "wb")
         pickle.dump(self.weights, f)
