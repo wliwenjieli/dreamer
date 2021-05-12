@@ -10,7 +10,7 @@ class ExperienceReplay(ApproximateQAgent):
         # mismatch parameter: the probability that a ghost is bad in replay
         self.mismatch = mismatch
 
-    def replay(self, replayBuffer, capacity):
+    def replay(self, replayBuffer):
         # randomly sample events to add to the buffer until it reaches capacity
         buffer = []
 
@@ -22,6 +22,7 @@ class ExperienceReplay(ApproximateQAgent):
             # replayBuffer pops a queue of n events
             buffer.append(replayBuffer.pop())
 
+        capacity = min(replayBuffer.size(),100)
         # randomly sample memories from the buffer
         indices = np.random.choice(len(buffer), capacity, replace=True)
 

@@ -651,7 +651,7 @@ def replayGame( layout, actions, display ):
 
     display.finish()
 
-def runGames(layout, pacman, ghosts, display, checkpoint_dir, numGames, record, p_bad_ghost, episodeProb, numTraining = 0, catchExceptions=False, timeout=30 ):
+def runGames(layout, pacman, ghosts, display, checkpoint_dir, numGames, record, p_bad_ghost, episodeProb, beQuiet, numTraining = 0, catchExceptions=False, timeout=30 ):
     import __main__
     __main__.__dict__['_display'] = display
 
@@ -661,7 +661,7 @@ def runGames(layout, pacman, ghosts, display, checkpoint_dir, numGames, record, 
 
 
     for i in range( numGames ):
-        beQuiet = i < numTraining
+        #beQuiet = i < numTraining
         if beQuiet:
                 # Suppress output and graphics
             import textDisplay
@@ -693,6 +693,47 @@ def runGames(layout, pacman, ghosts, display, checkpoint_dir, numGames, record, 
 
     return games, replayBuffer
 
+def experimentStep(args, agentOpts, pacmanType, dream, numEpisodes, war=False, replayBuffer = None):
+    """
+    :param command:
+    :param dream: boolean variable -- True if dreaming False if awake
+    :param war: boolean variable -- True if at war False if peace
+    :param (optional) replayBuffer: memory to sampled from for dreaming
+    :return: (optional) a Queue that contains the replayBuffer of fear memory at war time
+    """
+    war_p_bad_ghost = args['episodeProb'][0]
+    peace_p_bad_ghost = args['episodeProb'][1]
+    dream_p_bad_ghost = (war_p_bad_ghost+peace_p_bad_ghost)/2
+
+    # Instantiate Pacman with agentArgs
+    pacman = pacmanType(**agentOpts)
+    args['pacman'] = pacman
+
+    # Start training
+    if dream:
+        args['p_bad_ghost'] = dream_p_bad_ghost
+        args['numTraining'] = numEpisodes
+        args['beQuiet'] = True
+        dream = ExperienceReplay(**args)
+        print "A ghost attacks Pac-Man with probability " + str(args['p_bad_ghost']) + "."
+        dream.replay(replayBuffer)
+        return
+    else:
+        if war:
+            args['p_bad_ghost'] = war_p_bad_ghost
+            args['numTraining'] = numEpisodes
+            args['beQuiet'] = False
+            print "A ghost attacks Pac-Man with probability " + str(args['p_bad_ghost']) + "."
+            _, replayBuffer = runGames(**args)
+            return replayBuffer
+        else:
+            args['p_bad_ghost'] = peace_p_bad_ghost
+            args['numTraining'] = numEpisodes
+            args['beQuiet'] = False
+            print "A ghost attacks Pac-Man with probability " + str(args['p_bad_ghost']) + "."
+            _, replayBuffer = runGames(**args)
+            return replayBuffer
+
 if __name__ == '__main__':
     """
     The main function called when pacman.py is run
@@ -706,87 +747,23 @@ if __name__ == '__main__':
     """
 
     from experienceReplay import ExperienceReplay
-<<<<<<< HEAD
-
-    args = readCommand(sys.argv[1:])  # Get game components based on input
-    numTrain = args['numTraining'] # number of regular training session
-    numTransit = np.ceil(numTrain * 0.1) # number of training sessions in transit
-    numEvents = 50  # number of events in a dream
-
-    # awake phase 1
-    # peace zone
-    args['p_bad_ghost'] = args['episodeProb'][0]
-    args['numTraining'] = numTrain
-    print "Pac-Man is in a peaceful world for " + str(numTrain) + " episode. A ghost would attack it with probability " + str(args['p_bad_ghost'])
-    _ , replayBuffer = runGames(**args)
-    # start to shift to war zone
-=======
-    
     args, agentOpts, pacmanType = readCommand(sys.argv[1:])  # Get game components based on input
-    
-    # peace phase 1
-    args['p_bad_ghost'] = args['episodeProb'][0]
-    print "Pac-Man is in a peaceful world for " + str(args['numTraining']) + " episode. A ghost would attack it with probability " + str(args['p_bad_ghost'])
-    games, replayBuffer = runGames(**args)
-    
-    # dreaming -- fear consolidation
->>>>>>> 87f503ff575baf05ec39bf82963b1b703f6256ff
-    args['p_bad_ghost'] = args['episodeProb'][1]
-    args['numTraining'] = numTransit
-    _ , placeholderBuffer = runGames(**args)
+    numEpisodes = args['numTraining'] # number of regular training session
+    numTransit = np.ceil(numEpisodes * 0.1) # number of training sessions in transit
+    numDream = 9999  # number of events in a dream
+    numTest = np.ceil(numEpisodes * 0.1)
+    replayBuffer = Queue()
 
-    # dreaming 1 -- fear consolidation
-    # calculate p_bad_ghost in dream, see util
-    args['p_bad_ghost'] = find_p_in_dream(replayBuffer, placeholderBuffer, numTrain, numTransit, args['episodeProb'][0], args['episodeProb'][1])
-    dream = ExperienceReplay(args['p_bad_ghost'], **args)
-    print "Pac-Man is dreaming for " + str(numEvents) + " episode. A ghost would attack it with probability " + str(args['p_bad_ghost'])
-    weights = dream.replay(replayBuffer, numEvents)
-<<<<<<< HEAD
+    print "Pac-Man grows up in peace for "+str(numEpisodes)+" episodes..."
+    replayBuffer=replayBuffer.merge(experimentStep(args,agentOpts,pacmanType,False,numEpisodes))
 
-=======
-    
-    # awake: war zone
-    args['p_bad_ghost'] = args['episodeProb'][2]
-    print "Pac-Man is at war zone for " + str(args['numTraining']) + " episode. A ghost would attack it with probability " + str(args['p_bad_ghost'])
-    pacman = pacmanType(**agentOpts) # Instantiate Pacman with agentArgs
-    args['pacman'] = pacman
-    games, replayBuffer = runGames(**args)
->>>>>>> 87f503ff575baf05ec39bf82963b1b703f6256ff
+    # fear consolidation
+    print "Pac-Man goes to war for "+str(5)+" episodes..."
+    replayBuffer=replayBuffer.merge(experimentStep(args,agentOpts,pacmanType,False,2,war=True))
 
-    # awake phase 2
-    # war zone
-    args['p_bad_ghost'] = args['episodeProb'][1]
-    args['numTraining'] = numTrain
-    print "Pac-Man is at war zone for " + str(numTrain) + " episode. A ghost would attack it with probability " + str(args['p_bad_ghost'])
-    _ , replayBuffer = runGames(**args)
-    # start to shift to peace zone
-    args['p_bad_ghost'] = args['episodeProb'][0]
-    args['numTraining'] = numTransit
-    _ , placeholderBuffer = runGames(**args)
+    print "Pac-Man dreams at war camp..."
+    experimentStep(args,agentOpts,pacmanType,True,numDream,replayBuffer=replayBuffer) # fear consolidation training
 
-
-    # dreaming 2 -- fear extinction
-    # calculate p_bad_ghost in dream, see util
-    args['p_bad_ghost'] = find_p_in_dream(replayBuffer, placeholderBuffer, numTrain, numTransit, args['episodeProb'][0], args['episodeProb'][1])
-    dream = ExperienceReplay(args['p_bad_ghost'], **args)
-    print "Pac-Man is dreaming for " + str(numEvents) + " episode. A ghost would attack it with probability " + str(args['p_bad_ghost'])
-    weights = dream.replay(replayBuffer, numEvents)
-
-    # awake: peace zone
-<<<<<<< HEAD
-    args['p_bad_ghost'] = args['episodeProb'][0]
-    args['numTraining'] = numTrain
-    print "Pac-Man is in a peaceful world for " + str(numTrain) + " episode. A ghost would attack it with probability " + str(args['p_bad_ghost'])
-    _ , replayBuffer = runGames(**args)
-=======
-    args['p_bad_ghost'] = args['episodeProb'][4]
-    print "Pac-Man is in a peaceful world for " + str(args['numTraining']) + " episode. A ghost would attack it with probability " + str(args['p_bad_ghost'])
-    pacman = pacmanType(**agentOpts) # Instantiate Pacman with agentArgs
-    args['pacman'] = pacman
-    games, _ = runGames(**args)
-    
->>>>>>> 87f503ff575baf05ec39bf82963b1b703f6256ff
-
-    # import cProfile
-    # cProfile.run("runGames( **args )")
+    print "Pac-Man wakes up and go to war for "+str(2)+" episodes..."
+    replayBuffer=replayBuffer.merge(experimentStep(args,agentOpts,pacmanType,False,2,war=True)) # testing
     pass
