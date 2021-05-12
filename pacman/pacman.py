@@ -44,6 +44,7 @@ from util import find_p_in_dream
 import util, layout
 import sys, types, time, random, os
 import numpy as np
+from experienceReplay import ExperienceReplay
 
 ###################################################
 # YOUR INTERFACE TO THE PACMAN WORLD: A GameState #
@@ -549,7 +550,7 @@ def readCommand( argv ):
 
     # probability parameters
     #args['p_bad_ghost'] = options.p_bad_ghost
-    args['episodeProb'] = map(float, options.episodeProb.strip('[]').split(','))
+    args['episodeProb'] = [1, 0.2]
     args['checkpoint_dir']  = options.checkpoint_dir
     # Fix the random seed
     if options.fixRandomSeed: random.seed('cs188')
@@ -693,7 +694,7 @@ def runGames(layout, pacman, ghosts, display, checkpoint_dir, numGames, record, 
 
     return games, replayBuffer
 
-def experimentStep(args, agentOpts, pacmanType, dream, numEpisodes, war=False, replayBuffer = None):
+def experimentStep(args, agentOpts, pacmanType, dream, numEpisodes=200, war=False, replayBuffer = None):
     """
     :param command:
     :param dream: boolean variable -- True if dreaming False if awake
@@ -734,6 +735,45 @@ def experimentStep(args, agentOpts, pacmanType, dream, numEpisodes, war=False, r
             _, replayBuffer = runGames(**args)
             return replayBuffer
 
+def fearConsolidation(args, agentOpts, pacmanType, numEpisodes=10, numTransit=5, numTesting=5):
+
+    replayBuffer = Queue()
+
+    print "Pac-Man grows up in peace for " + str(numEpisodes) + " episodes..."
+    buffer = experimentStep(args, agentOpts, pacmanType, False, numEpisodes=numEpisodes)
+    replayBuffer = replayBuffer.merge(buffer)
+
+    # fear consolidation
+    print "Pac-Man goes to war for " + str(numTransit) + " episodes..."
+    buffer = experimentStep(args, agentOpts, pacmanType, False, numEpisodes=numTransit, war=True)
+    replayBuffer = replayBuffer.merge(buffer)
+
+    print "Pac-Man dreams at war camp..."
+    experimentStep(args, agentOpts, pacmanType, True, replayBuffer=replayBuffer)  # fear consolidation training
+
+    print "Pac-Man wakes up and go to war for " + str(numTesting) + " episodes..."
+    experimentStep(args, agentOpts, pacmanType, False, numTesting, war=True)  # testing
+
+
+def fearExtinction(args, agentOpts, pacmanType, numEpisodes, numTransit=5, numTesting=5):
+
+    replayBuffer = Queue()
+
+    print "Pac-Man at warzone for " + str(numEpisodes) + " episodes..."
+    buffer = experimentStep(args, agentOpts, pacmanType, False, numEpisodes=numEpisodes, war=True)
+    replayBuffer = replayBuffer.merge(buffer)
+
+    print "Pac-Man lives in a peaceful world for " + str(numTransit) + " episodes..."
+    buffer = experimentStep(args, agentOpts, pacmanType, False, numEpisodes=numTransit)
+    replayBuffer = replayBuffer.merge(buffer)
+
+    print "Pac-Man dreams about war time..."
+    experimentStep(args, agentOpts, pacmanType, True, replayBuffer=replayBuffer)  # fear extinction training
+
+    print "Pac-Man wakes up in a peaceful world for " + str(numTesting) + " episodes..."
+    experimentStep(args, agentOpts, pacmanType, False, numTesting)  # testing
+
+
 if __name__ == '__main__':
     """
     The main function called when pacman.py is run
@@ -745,29 +785,14 @@ if __name__ == '__main__':
 
     > python pacman.py --help
     """
-
-    from experienceReplay import ExperienceReplay
     args, agentOpts, pacmanType = readCommand(sys.argv[1:])  # Get game components based on input
     numEpisodes = args['numGames'] # number of regular training session
     numTransit = np.ceil(numEpisodes * 0.1) # number of training sessions in transit
-    numDream = 9999  # number of events in a dream
     numTest = np.ceil(numEpisodes * 0.1)
-    replayBuffer = Queue()
 
-    print "Pac-Man grows up in peace for "+str(numEpisodes)+" episodes..."
-    buffer=experimentStep(args,agentOpts,pacmanType,False,numEpisodes)
-    replayBuffer = replayBuffer.merge(buffer)
-
-    # fear consolidation
-    print "Pac-Man goes to war for "+str(5)+" episodes..."
-    buffer=experimentStep(args,agentOpts,pacmanType,False,5,war=True)
-    replayBuffer = replayBuffer.merge(buffer)
-
-    print "Pac-Man dreams at war camp..."
-    experimentStep(args,agentOpts,pacmanType,True,numDream,replayBuffer=replayBuffer) # fear consolidation training
-
-    print "Pac-Man wakes up and go to war for "+str(5)+" episodes..."
-    replayBuffer=replayBuffer.merge(experimentStep(args,agentOpts,pacmanType,False,5,war=True)) # testing
+    # uncomment this for fear extinction experiment
+    # fearExtinction(args, agentOpts, pacmanType, numEpisodes)
+    fearConsolidation(args, agentOpts,pacmanType,numEpisodes)
     pass
 
 

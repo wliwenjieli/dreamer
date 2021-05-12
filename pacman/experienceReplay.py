@@ -41,7 +41,7 @@ class ExperienceReplay(ApproximateQAgent):
 
                 # update weights
                 self.weights = self.update(state, action, nextState, reward)
-                print(self.weights)
+                #print(self.weights)
 
         f = open(self.checkpoint, "wb")
         pickle.dump(self.weights, f)
